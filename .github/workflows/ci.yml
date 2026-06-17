@@ -62,7 +62,7 @@ jobs:
         Compress-Archive -Path brainfuck_interpreter.exe -DestinationPath brainfuck-interpreter-windows-latest.zip
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: brainfuck-interpreter-${{ matrix.os }}
         path: |
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download Build Artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         path: artifacts
         merge-multiple: true
@@ -98,7 +98,7 @@ jobs:
         fi
 
     - name: Create or Update Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ steps.get_tag.outputs.tag_name }}
         name: ${{ steps.get_tag.outputs.release_name }}
