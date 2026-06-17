@@ -13,7 +13,7 @@
 #include <vector>
 
 std::vector<char> format_code(std::string_view code_string) {
-    auto is_instruction = [](char c) {
+    auto is_instruction = [](const char c) {
         return c == '+' || c == '-' || c == '<' || c == '>' ||
                c == '.' || c == ',' || c == '[' || c == ']';
     };
@@ -22,15 +22,43 @@ std::vector<char> format_code(std::string_view code_string) {
 }
 
 int main(const int argc, char** argv) {
+    bool enable_time_profiling = false;
+    std::string input_file_name;
+
     auto start_time = std::chrono::steady_clock::now();
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
+
+    for (int i = 1; i < argc; ++i) {
+        if (auto arg = std::string_view(argv[i]); arg.starts_with('-')) {
+            if (arg == "-t" || arg == "--time") {
+                enable_time_profiling = true;
+            } else if (arg == "-h" || arg == "--help") {
+                std::println("Usage: {} [options] <input_file>", argv[0]);
+                std::println("Options:");
+                std::println("  -t, --time    Enable execution time profiling");
+                std::println("  -h, --help    Display this help message");
+                return 0;
+            } else {
+                std::cerr << "Unknown option: " << arg << std::endl;
+                return 1;
+            }
+        } else {
+            if (!input_file_name.empty()) {
+                std::cerr << "Input file already exists: " << input_file_name << std::endl;
+                return 1;
+            }
+            input_file_name = arg;
+        }
+    }
+
+    if (input_file_name.empty()) {
+        std::cerr << "Usage: " << argv[0] << " [options] <input_file>" << std::endl;
+        std::cerr << "Input file not provided" << std::endl;
         return 1;
     }
 
-    std::ifstream input_file(argv[1]);
+    std::ifstream input_file(input_file_name);
     if (!input_file.is_open()) {
-        std::cerr << "Unable to open file: " << argv[1] << std::endl;
+        std::cerr << "Unable to open file: " << input_file_name << std::endl;
         return 1;
     }
 
@@ -87,5 +115,7 @@ int main(const int argc, char** argv) {
 
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
-    std::println("use time: {:.3f} ms", elapsed.count());
+    if (enable_time_profiling) {
+        std::println("use time: {:.3f} ms", elapsed.count());
+    }
 }
