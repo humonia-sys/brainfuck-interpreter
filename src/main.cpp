@@ -13,7 +13,7 @@
 #include <vector>
 
 std::vector<char> format_code(std::string_view code_string) {
-    auto is_instruction = [](const char c) {
+    auto is_instruction = [](char c) {
         return c == '+' || c == '-' || c == '<' || c == '>' ||
                c == '.' || c == ',' || c == '[' || c == ']';
     };
@@ -22,15 +22,15 @@ std::vector<char> format_code(std::string_view code_string) {
 }
 
 int main(const int argc, char** argv) {
-    bool enable_time_profiling = false;
-    std::string input_file_name;
+    bool time_profiling = false;
+    std::string input_filepath;
 
     auto start_time = std::chrono::steady_clock::now();
 
     for (int i = 1; i < argc; ++i) {
         if (auto arg = std::string_view(argv[i]); arg.starts_with('-')) {
             if (arg == "-t" || arg == "--time") {
-                enable_time_profiling = true;
+                time_profiling = true;
             } else if (arg == "-h" || arg == "--help") {
                 std::println("Usage: {} [options] <input_file>", argv[0]);
                 std::println("Options:");
@@ -42,23 +42,23 @@ int main(const int argc, char** argv) {
                 return 1;
             }
         } else {
-            if (!input_file_name.empty()) {
-                std::cerr << "Input file already exists: " << input_file_name << std::endl;
+            if (!input_filepath.empty()) {
+                std::cerr << "Input file already specified: " << input_filepath << std::endl;
                 return 1;
             }
-            input_file_name = arg;
+            input_filepath = arg;
         }
     }
 
-    if (input_file_name.empty()) {
+    if (input_filepath.empty()) {
         std::cerr << "Usage: " << argv[0] << " [options] <input_file>" << std::endl;
         std::cerr << "Input file not provided" << std::endl;
         return 1;
     }
 
-    std::ifstream input_file(input_file_name);
+    std::ifstream input_file(input_filepath);
     if (!input_file.is_open()) {
-        std::cerr << "Unable to open file: " << input_file_name << std::endl;
+        std::cerr << "Unable to open file: " << input_filepath << std::endl;
         return 1;
     }
 
@@ -115,7 +115,7 @@ int main(const int argc, char** argv) {
 
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
-    if (enable_time_profiling) {
-        std::println("use time: {:.3f} ms", elapsed.count());
+    if (time_profiling) {
+        std::println("elapsed time: {:.3f} ms", elapsed.count());
     }
 }
