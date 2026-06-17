@@ -22,6 +22,27 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install GCC 14 (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+        sudo apt-get update
+        sudo apt-get install -y g++-14
+        echo "CC=gcc-14" >> $GITHUB_ENV
+        echo "CXX=g++-14" >> $GITHUB_ENV
+
+    - name: Install GCC 14 (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        if which g++-14 >/dev/null; then
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
+        else
+          brew install gcc
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
+        fi
+
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
