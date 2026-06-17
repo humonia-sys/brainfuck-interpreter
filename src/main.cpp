@@ -2,6 +2,7 @@
 // Created by rylin on 2026/6/17.
 //
 
+#include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -21,6 +22,7 @@ std::vector<char> format_code(std::string_view code_string) {
 }
 
 int main(const int argc, char** argv) {
+    auto start_time = std::chrono::steady_clock::now();
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
         return 1;
@@ -82,4 +84,8 @@ int main(const int argc, char** argv) {
                 std::unreachable();
         }
     }
+
+    auto end_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
+    std::println("use time: {:.3f} ms", elapsed.count());
 }
