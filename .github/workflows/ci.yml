@@ -89,11 +89,9 @@ jobs:
       run: |
         if [[ "${{ github.ref }}" == refs/tags/* ]]; then
           echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          echo "prerelease=false" >> $GITHUB_OUTPUT
           echo "release_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
         else
           echo "tag_name=latest" >> $GITHUB_OUTPUT
-          echo "prerelease=true" >> $GITHUB_OUTPUT
           echo "release_name=Latest Build" >> $GITHUB_OUTPUT
         fi
 
@@ -102,7 +100,7 @@ jobs:
       with:
         tag_name: ${{ steps.get_tag.outputs.tag_name }}
         name: ${{ steps.get_tag.outputs.release_name }}
-        prerelease: ${{ steps.get_tag.outputs.prerelease }}
+        prerelease: ${{ steps.get_tag.outputs.tag_name == 'latest' }}
         target_commitish: ${{ github.sha }}
         files: |
           artifacts/brainfuck-interpreter-*.tar.gz
