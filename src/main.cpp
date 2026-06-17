@@ -2,26 +2,22 @@
 // Created by rylin on 2026/6/17.
 //
 
-#include <vector>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <memory>
-#include <ostream>
 #include <print>
+#include <ranges>
 #include <sstream>
+#include <utility>
+#include <vector>
 
-std::vector<char> format_code(const std::string_view code_string) {
-    std::vector<char> result;
-    result.reserve(code_string.size());
-    for (auto c: code_string) {
-        if (c == '+' || c == '-' || c == '<' || c == '>' || c == '.' || c == ',' || c == '[' || c == ']') {
-            result.push_back(c);
-        }
-    }
-    result.shrink_to_fit();
-
-    return result;
+std::vector<char> format_code(std::string_view code_string) {
+    auto is_instruction = [](char c) {
+        return c == '+' || c == '-' || c == '<' || c == '>' ||
+               c == '.' || c == ',' || c == '[' || c == ']';
+    };
+    auto filtered = code_string | std::views::filter(is_instruction);
+    return {filtered.begin(), filtered.end()};
 }
 
 int main(const int argc, char** argv) {
@@ -35,67 +31,55 @@ int main(const int argc, char** argv) {
         std::cerr << "Unable to open file: " << argv[1] << std::endl;
         return 1;
     }
+
     std::stringstream buffer;
     buffer << file.rdbuf();
 
-
-    const auto tape = std::make_unique<uint8_t[]>(30000);
-    uint8_t *ptr = tape.get();
+    std::vector<uint8_t> tape(30000, 0);
+    size_t ptr = 0;
 
     const auto instructions = format_code(buffer.str());
 
     for (size_t i = 0; i < instructions.size(); ++i) {
         switch (instructions[i]) {
             case '+':
-                *(ptr) += 1;
+                tape[ptr]++;
                 break;
             case '-':
-                *(ptr) -= 1;
+                tape[ptr]--;
                 break;
             case '>':
-                if (ptr == tape.get() + 29999) {
-                    ptr = tape.get();
-                } else {
-                    ptr += 1;
-                }
+                ptr = (ptr + 1) % 30000;
                 break;
             case '<':
-                if (ptr == tape.get()) {
-                    ptr += 29999;
-                } else {
-                    ptr -= 1;
-                }
+                ptr = (ptr + 29999) % 30000;
                 break;
             case '.':
-                std::print("{}", static_cast<char>(*(ptr)));
+                std::print("{}", static_cast<char>(tape[ptr]));
                 break;
             case ',':
-                *(ptr) = static_cast<uint8_t>(std::cin.get());
+                tape[ptr] = static_cast<uint8_t>(std::cin.get());
                 break;
             case '[':
-                if (*(ptr) == 0) {
-                    auto loop_depth = 1;
-                    while (loop_depth > 0) {
+                if (tape[ptr] == 0) {
+                    for (int depth = 1; depth > 0;) {
                         i++;
-                        if (instructions[i] == '[') loop_depth++;
-                        else if (instructions[i] == ']') loop_depth--;
+                        if (instructions[i] == '[') depth++;
+                        else if (instructions[i] == ']') depth--;
                     }
                 }
                 break;
             case ']':
-                if (*(ptr) != 0) {
-                    auto loop_depth = 1;
-                    while (loop_depth > 0) {
+                if (tape[ptr] != 0) {
+                    for (int depth = 1; depth > 0;) {
                         i--;
-                        if (instructions[i] == '[') loop_depth--;
-                        else if (instructions[i] == ']') loop_depth++;
+                        if (instructions[i] == '[') depth--;
+                        else if (instructions[i] == ']') depth++;
                     }
                 }
                 break;
             default:
-                std::println("");
-                std::println("Illegal char detected. i = {} : {}", i, instructions[i]);
-                break;
+                std::unreachable();
         }
     }
 }
