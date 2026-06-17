@@ -25,8 +25,6 @@ int main(const int argc, char** argv) {
     bool time_profiling = false;
     std::string input_filepath;
 
-    auto start_time = std::chrono::steady_clock::now();
-
     for (int i = 1; i < argc; ++i) {
         if (auto arg = std::string_view(argv[i]); arg.starts_with('-')) {
             if (arg == "-t" || arg == "--time") {
@@ -70,6 +68,7 @@ int main(const int argc, char** argv) {
 
     const auto instructions = format_code(code_buffer.str());
 
+    auto start_time = std::chrono::steady_clock::now();
     for (size_t i = 0; i < instructions.size(); ++i) {
         switch (instructions[i]) {
             case '+':
