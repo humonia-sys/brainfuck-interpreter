@@ -30,8 +30,13 @@ The compiled executable `brainfuck_interpreter` (or `brainfuck_interpreter.exe` 
 
 ### Running
 ```bash
-./build/brainfuck_interpreter <path_to_brainfuck_file>
+./build/brainfuck_interpreter [options] <path_to_brainfuck_file>
 ```
+
+#### Options:
+* `-t, --time`: Enable execution time profiling (prints the elapsed time in milliseconds after execution completes).
+* `-h, --help`: Display the usage help message.
+
 
 ---
 
