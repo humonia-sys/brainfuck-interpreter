@@ -28,42 +28,42 @@ int main(const int argc, char** argv) {
         return 1;
     }
 
-    std::ifstream file(argv[1]);
-    if (!file.is_open()) {
+    std::ifstream input_file(argv[1]);
+    if (!input_file.is_open()) {
         std::cerr << "Unable to open file: " << argv[1] << std::endl;
         return 1;
     }
 
-    std::stringstream buffer;
-    buffer << file.rdbuf();
+    std::stringstream code_buffer;
+    code_buffer << input_file.rdbuf();
 
     std::vector<uint8_t> tape(30000, 0);
-    size_t ptr = 0;
+    size_t tape_index = 0;
 
-    const auto instructions = format_code(buffer.str());
+    const auto instructions = format_code(code_buffer.str());
 
     for (size_t i = 0; i < instructions.size(); ++i) {
         switch (instructions[i]) {
             case '+':
-                tape[ptr]++;
+                tape[tape_index]++;
                 break;
             case '-':
-                tape[ptr]--;
+                tape[tape_index]--;
                 break;
             case '>':
-                ptr = (ptr + 1) % 30000;
+                tape_index = (tape_index + 1) % 30000;
                 break;
             case '<':
-                ptr = (ptr + 29999) % 30000;
+                tape_index = (tape_index + 29999) % 30000;
                 break;
             case '.':
-                std::print("{}", static_cast<char>(tape[ptr]));
+                std::print("{}", static_cast<char>(tape[tape_index]));
                 break;
             case ',':
-                tape[ptr] = static_cast<uint8_t>(std::cin.get());
+                tape[tape_index] = static_cast<uint8_t>(std::cin.get());
                 break;
             case '[':
-                if (tape[ptr] == 0) {
+                if (tape[tape_index] == 0) {
                     for (int depth = 1; depth > 0;) {
                         i++;
                         if (instructions[i] == '[') depth++;
@@ -72,7 +72,7 @@ int main(const int argc, char** argv) {
                 }
                 break;
             case ']':
-                if (tape[ptr] != 0) {
+                if (tape[tape_index] != 0) {
                     for (int depth = 1; depth > 0;) {
                         i--;
                         if (instructions[i] == '[') depth--;
