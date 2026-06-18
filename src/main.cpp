@@ -7,26 +7,80 @@
 #include <fstream>
 #include <iostream>
 #include <print>
-#include <ranges>
-#include <sstream>
 #include <utility>
 #include <vector>
 
-std::vector<char> format_code(std::string_view code_string) {
-    auto is_instruction = [](char c) {
-        return c == '+' || c == '-' || c == '<' || c == '>' ||
-               c == '.' || c == ',' || c == '[' || c == ']';
-    };
-    auto filtered = code_string | std::views::filter(is_instruction);
-    return {filtered.begin(), filtered.end()};
+struct ParsedProgram {
+    std::vector<char> instructions;
+    std::vector<size_t> jump_table;
+};
+
+ParsedProgram format_code(std::ifstream &input_file) {
+    std::vector<char> instructions;
+    std::vector<size_t> jump_table;
+    std::vector<size_t> bracket_stack;
+
+    input_file.seekg(0, std::ios::end);
+    const std::streamsize length = input_file.tellg();
+    input_file.seekg(0, std::ios::beg);
+
+    if (length <= 0) {
+        return ParsedProgram{};
+    }
+
+    std::string buffer(length, '\0');
+    if (!input_file.read(buffer.data(), length)) {
+        buffer.resize(input_file.gcount());
+    }
+
+    instructions.reserve(buffer.size());
+    jump_table.reserve(buffer.size());
+    bracket_stack.reserve(buffer.size() / 2);
+
+    for (char c: buffer) {
+        if (c == '+' || c == '-' || c == '<' || c == '>' ||
+            c == '.' || c == ',' || c == '[' || c == ']') {
+            auto current_idx = instructions.size();
+            instructions.push_back(c);
+            jump_table.push_back(0);
+
+            if (c == '[') {
+                bracket_stack.push_back(current_idx);
+            } else if (c == ']') {
+                if (bracket_stack.empty()) {
+                    std::cerr << "Unbalanced brackets" << std::endl;
+                    std::exit(1);
+                }
+                size_t open_idx = bracket_stack.back();
+                bracket_stack.pop_back();
+
+                jump_table[open_idx] = current_idx;
+                jump_table[current_idx] = open_idx;
+            }
+        }
+    }
+
+    if (!bracket_stack.empty()) {
+        std::cerr << "Unbalanced brackets" << std::endl;
+        std::exit(1);
+    }
+
+    instructions.shrink_to_fit();
+    jump_table.shrink_to_fit();
+
+    return ParsedProgram{std::move(instructions), std::move(jump_table)};
 }
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
     bool time_profiling = false;
+    bool stop_parsing_options = false;
     std::string input_filepath;
 
     for (int i = 1; i < argc; ++i) {
-        if (auto arg = std::string_view(argv[i]); arg.starts_with('-')) {
+        auto arg = std::string_view(argv[i]);
+        if (arg == "--") {
+            stop_parsing_options = true;
+        } else if (arg.starts_with('-') && !stop_parsing_options) {
             if (arg == "-t" || arg == "--time") {
                 time_profiling = true;
             } else if (arg == "-h" || arg == "--help") {
@@ -60,15 +114,13 @@ int main(const int argc, char** argv) {
         return 1;
     }
 
-    std::stringstream code_buffer;
-    code_buffer << input_file.rdbuf();
-
-    std::vector<uint8_t> tape(30000, 0);
+    std::vector<uint8_t> tape(32768, 0);
     size_t tape_index = 0;
 
-    const auto instructions = format_code(code_buffer.str());
+    const auto [instructions, jump_table] = format_code(input_file);
 
     auto start_time = std::chrono::steady_clock::now();
+
     for (size_t i = 0; i < instructions.size(); ++i) {
         switch (instructions[i]) {
             case '+':
@@ -78,33 +130,28 @@ int main(const int argc, char** argv) {
                 tape[tape_index]--;
                 break;
             case '>':
-                tape_index = (tape_index + 1) % 30000;
+                tape_index = (tape_index + 1) & 32767;
                 break;
             case '<':
-                tape_index = (tape_index + 29999) % 30000;
+                tape_index = (tape_index - 1) & 32767;
                 break;
             case '.':
                 std::print("{}", static_cast<char>(tape[tape_index]));
                 break;
-            case ',':
-                tape[tape_index] = static_cast<uint8_t>(std::cin.get());
-                break;
+            case ',': {
+                std::fflush(stdout);
+                int c = std::cin.get();
+                tape[tape_index] = (c == EOF) ? 0 : static_cast<uint8_t>(c);
+            }
+            break;
             case '[':
                 if (tape[tape_index] == 0) {
-                    for (int depth = 1; depth > 0;) {
-                        i++;
-                        if (instructions[i] == '[') depth++;
-                        else if (instructions[i] == ']') depth--;
-                    }
+                    i = jump_table[i];
                 }
                 break;
             case ']':
                 if (tape[tape_index] != 0) {
-                    for (int depth = 1; depth > 0;) {
-                        i--;
-                        if (instructions[i] == '[') depth--;
-                        else if (instructions[i] == ']') depth++;
-                    }
+                    i = jump_table[i];
                 }
                 break;
             default:

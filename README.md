@@ -8,7 +8,7 @@ A lightweight, cross-platform Brainfuck interpreter written in C++23.
 ## Features
 - **Cross-Platform Support**: Compiles and runs on Linux, macOS, and Windows.
 - **Modern C++**: Built using modern C++23 features.
-- **Bounded Tape**: Uses a standard 30,000-cell tape with circular wrapping.
+- **Bounded Tape**: Uses a 32,768-cell tape with high-performance bitwise circular wrapping.
 - **Input Formatting**: Ignores non-Brainfuck characters automatically.
 
 ## Local Setup
